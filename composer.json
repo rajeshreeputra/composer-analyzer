@@ -1,0 +1,16 @@
+{
+  "name": "rajeshreeputra/composer-analyzer",
+  "description": "A CLI tool to analyze composer.json and composer.lock files using AI.",
+  "type": "project",
+  "require": {
+    "php": ">=7.4",
+    "guzzlehttp/guzzle": "^7.0",
+    "symfony/console": "^6.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ComposerAnalyzer\\": "src/"
+    }
+  },
+  "bin": ["bin/analyzer"]
+}
