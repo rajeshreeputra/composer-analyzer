@@ -3,7 +3,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use ComposerAnalyzer\ComposerAnalyzer;
+use Rajeshreeputra\ComposerAnalyzer\ComposerAnalyzer;
 use Symfony\Component\Console\Application;
 
 $application = new Application();

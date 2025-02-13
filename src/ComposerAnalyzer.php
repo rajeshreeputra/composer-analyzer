@@ -1,6 +1,6 @@
 <?php
 
-namespace ComposerAnalyzer;
+namespace Rajeshreeputra\ComposerAnalyzer;
 
 use GuzzleHttp\Client;
 use Symfony\Component\Console\Command\Command;
@@ -28,55 +28,69 @@ class ComposerAnalyzer extends Command {
   protected function execute(InputInterface $input, OutputInterface $output) {
     $helper = $this->getHelper('question');
 
-    // Ask if the user wants to update a specific package or all packages.
-    $updateChoice = new ChoiceQuestion(
-      'Do you want to update a specific package or all packages?',
-      ['specific', 'all'],
-      0
-    );
-    $updateChoice->setErrorMessage('Invalid choice.');
-    $updateType = $helper->ask($input, $output, $updateChoice);
+    $output->writeln('<info>Welcome to the Composer Analyzer CLI. Type "bye" to exit.</info>');
 
-    $packageName = null;
-    if ($updateType === 'specific') {
-      // Ask for the package name.
-      $packageQuestion = new Question('Enter the package name you want to update: ');
-      $packageName = $helper->ask($input, $output, $packageQuestion);
+    while (true) {
+      // Ask if the user wants to update a specific package or all packages.
+      $updateChoice = new ChoiceQuestion(
+        'Do you want to update a specific package or all packages? (type "bye" to exit)',
+        ['specific', 'all', 'bye'],
+        0
+      );
+      $updateChoice->setErrorMessage('Invalid choice.');
+      $updateType = $helper->ask($input, $output, $updateChoice);
+
+      if ($updateType === 'bye') {
+        $output->writeln('<info>Goodbye!</info>');
+        break;
+      }
+
+      $packageName = null;
+      if ($updateType === 'specific') {
+        // Ask for the package name.
+        $packageQuestion = new Question('Enter the package name you want to update (type "bye" to exit): ');
+        $packageName = $helper->ask($input, $output, $packageQuestion);
+
+        if (strtolower($packageName) === 'bye') {
+          $output->writeln('<info>Goodbye!</info>');
+          break;
+        }
+      }
+
+      // Ask for confirmation before proceeding.
+      $confirmation = new ConfirmationQuestion(
+        'Do you want to proceed with the update? (yes/no) ',
+        false
+      );
+      if (!$helper->ask($input, $output, $confirmation)) {
+        $output->writeln('<info>Update canceled.</info>');
+        continue;
+      }
+
+      // Attempt to update the package(s).
+      $output->writeln('<info>Attempting to update the package(s)...</info>');
+      $updateCommand = $updateType === 'specific' ? "composer require $packageName" : 'composer update';
+      exec($updateCommand, $updateOutput, $returnCode);
+
+      if ($returnCode === 0) {
+        $output->writeln('<info>Package(s) updated successfully.</info>');
+        continue;
+      }
+
+      // If the update fails, analyze the issue.
+      $output->writeln('<error>Failed to update the package(s). Analyzing the issue...</error>');
+
+      $composerJson = file_get_contents('composer.json');
+      $composerLock = file_get_contents('composer.lock');
+
+      if (!$composerJson || !$composerLock) {
+        $output->writeln('<error>composer.json or composer.lock file not found.</error>');
+        continue;
+      }
+
+      $analysisResult = $this->analyze_files($composerJson, $composerLock, $packageName);
+      $output->writeln("<info>Analysis Result:</info>\n" . $analysisResult);
     }
-
-    // Ask for confirmation before proceeding.
-    $confirmation = new ConfirmationQuestion(
-      'Do you want to proceed with the update? (yes/no) ',
-      false
-    );
-    if (!$helper->ask($input, $output, $confirmation)) {
-      $output->writeln('<info>Update canceled.</info>');
-      return Command::SUCCESS;
-    }
-
-    // Attempt to update the package(s).
-    $output->writeln('<info>Attempting to update the package(s)...</info>');
-    $updateCommand = $updateType === 'specific' ? "composer require $packageName" : 'composer update';
-    exec($updateCommand, $updateOutput, $returnCode);
-
-    if ($returnCode === 0) {
-      $output->writeln('<info>Package(s) updated successfully.</info>');
-      return Command::SUCCESS;
-    }
-
-    // If the update fails, analyze the issue.
-    $output->writeln('<error>Failed to update the package(s). Analyzing the issue...</error>');
-
-    $composerJson = file_get_contents('composer.json');
-    $composerLock = file_get_contents('composer.lock');
-
-    if (!$composerJson || !$composerLock) {
-      $output->writeln('<error>composer.json or composer.lock file not found.</error>');
-      return Command::FAILURE;
-    }
-
-    $analysisResult = $this->analyze_files($composerJson, $composerLock, $packageName);
-    $output->writeln("<info>Analysis Result:</info>\n" . $analysisResult);
 
     return Command::SUCCESS;
   }
