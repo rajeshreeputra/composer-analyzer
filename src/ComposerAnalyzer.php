@@ -29,7 +29,7 @@ class ComposerAnalyzer extends Command {
     $composerJsonPath = $input->getArgument('composer_json');
     $composerLockPath = $input->getArgument('composer_lock');
 
-    if (!file_exists($composerJsonPath) {
+    if (!file_exists($composerJsonPath)) {
       $output->writeln('<error>composer.json file not found.</error>');
       return Command::FAILURE;
     }
@@ -51,6 +51,11 @@ class ComposerAnalyzer extends Command {
   private function analyze_files($composerJson, $composerLock) {
     $client = new Client();
 
+    // Truncate the input data to fit within the request size limits
+    $maxLength = 1000; // Adjust this value as needed
+    $composerJson = substr($composerJson, 0, $maxLength);
+    $composerLock = substr($composerLock, 0, $maxLength);
+
     $prompt = "Analyze the following composer.json and composer.lock files and explain why a specific package cannot be updated:\n\n";
     $prompt .= "composer.json:\n" . $composerJson . "\n\n";
     $prompt .= "composer.lock:\n" . $composerLock . "\n\n";
@@ -63,7 +68,36 @@ class ComposerAnalyzer extends Command {
           'Content-Type' => 'application/json',
         ],
         'json' => [
-          'model' => 'text-davinci-003', // Use the appropriate GPT model.
+          'model' => 'gpt-3.5-turbo-instruct', // Use the appropriate GPT model.
+          'prompt' => $prompt,
+          'max_tokens' => 500,
+          'temperature' => 0.7,
+        ],
+      ]);
+
+      $responseData = json_decode($response->getBody(), true);
+      return $responseData['choices'][0]['text'] ?? 'No response from AI.';
+    } catch (Exception $e) {
+      return 'Error analyzing files: ' . $e->getMessage();
+    }
+  }
+
+  private function analyze_files1($composerJson, $composerLock) {
+    $client = new Client();
+
+    $prompt = "Analyze the following composer.json and composer.lock files and explain why a specific package cannot be updated:\n\n";
+    $prompt .= "composer.json:\n" . $composerJson . "\n\n";
+    $prompt .= "composer.lock:\n" . $composerLock . "\n\n";
+    $prompt .= "Provide a detailed explanation and suggest possible solutions.";
+
+    try {
+      $response = $client->post('https://api.openai.com/v1/completions', [
+        'headers' => [
+          'Authorization' => 'Bearer ' . $this->openaiApiKey,
+          'Content-Type' => 'application/json',
+        ],
+        'json' => [
+          'model' => 'text-embedding-ada-002', // Use the appropriate GPT model.
           'prompt' => $prompt,
           'max_tokens' => 500,
           'temperature' => 0.7,
