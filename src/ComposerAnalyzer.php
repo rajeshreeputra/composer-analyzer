@@ -28,7 +28,7 @@ class ComposerAnalyzer extends Command {
   protected function execute(InputInterface $input, OutputInterface $output) {
     $helper = $this->getHelper('question');
 
-    $output->writeln('<info>Welcome to the Composer Analyzer CLI. Type "bye" to exit.</info>');
+    $output->writeln("<info>Welcome to the Rajeshreeputra's Composer Analyzer CLI. Type 'bye' to exit.</info>");
 
     while (true) {
       // Ask if the user wants to update a specific package or all packages.

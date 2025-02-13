@@ -9,7 +9,7 @@
   },
   "autoload": {
     "psr-4": {
-      "ComposerAnalyzer\\": "src/"
+      "Rajeshreeputra\\ComposerAnalyzer\\": "src/"
     }
   },
   "bin": ["bin/analyzer"]
