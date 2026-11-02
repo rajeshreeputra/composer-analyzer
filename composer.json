@@ -4,7 +4,7 @@
   "type": "project",
   "require": {
     "php": ">=7.4",
-    "guzzlehttp/guzzle": "^7.0",
+    "guzzlehttp/guzzle": "^8.3",
     "symfony/console": "^6.0"
   },
   "autoload": {
